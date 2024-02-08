@@ -270,6 +270,7 @@ pub struct RunResult {
     pub casm_program: CairoProgram,
     pub instructions: Vec<Instruction>,
     pub headers_len: usize,
+    pub diagnostics: Vec<String>
 }
 
 pub fn run_program_at_path(filename: &PathBuf) -> Result<RunResult, Error> {
@@ -284,9 +285,16 @@ pub fn run_program_at_path(filename: &PathBuf) -> Result<RunResult, Error> {
     let air_private_input: Option<PathBuf> = None;
     let memory_file: Option<PathBuf> = None;
 
+    // configure diagnostics
+    let mut program_diagnostics: Vec<String> = Vec::new();
+    let diagnostics_callback = |severity, diagnostic| {
+        program_diagnostics.push(format!("{severity}: {diagnostic}"));
+    };
+    let diagnostics_reporter = DiagnosticsReporter::callback(diagnostics_callback).allow_warnings();
+
     let compiler_config = CompilerConfig {
         replace_ids: true,
-        diagnostics_reporter: DiagnosticsReporter::default().allow_warnings(),
+        diagnostics_reporter,
         ..CompilerConfig::default()
     };
     let sierra_program = compile_cairo_project_at_path(filename, compiler_config)
@@ -590,6 +598,7 @@ pub fn run_program_at_path(filename: &PathBuf) -> Result<RunResult, Error> {
         casm_program,
         instructions: instructions_vec,
         headers_len,
+        diagnostics: program_diagnostics
     })
 }
 

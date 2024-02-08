@@ -42,6 +42,7 @@ pub struct RunnerResult {
     casm_formatted_instructions: Vec<String>,
     casm_to_sierra_map: HashMap<usize, Vec<usize>>,
     sierra_formatted_program: SierraFormattedProgram,
+    diagnostics: Vec<String>
 }
 
 pub async fn runner_handler(
@@ -57,6 +58,7 @@ pub async fn runner_handler(
         memory,
         instructions,
         headers_len,
+        diagnostics,
     } = match run_program_at_path(&file_path) {
         Ok(result) => result,
         Err(error) => {
@@ -91,6 +93,7 @@ pub async fn runner_handler(
         casm_formatted_instructions,
         casm_to_sierra_map: make_casm_to_sierra_map(casm_program.debug_info, headers_len),
         sierra_formatted_program: format_sierra_program(sierra_program),
+        diagnostics
     }))
 }
 
