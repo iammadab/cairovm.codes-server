@@ -227,6 +227,9 @@ pub enum Error {
         param_index: usize,
         arg_index: usize,
     },
+    // TODO: find a better error form
+    #[error("Compilation error")]
+    DiagnosticsError(Vec<String>)
 }
 
 pub struct FileWriter {
@@ -298,7 +301,7 @@ pub fn run_program_at_path(filename: &PathBuf) -> Result<RunResult, Error> {
         ..CompilerConfig::default()
     };
     let sierra_program = compile_cairo_project_at_path(filename, compiler_config)
-        .map_err(|err| Error::SierraCompilation(err.to_string()))?;
+        .map_err(|err| Error::DiagnosticsError(program_diagnostics.clone()))?;
 
     let metadata_config = Some(Default::default());
 
