@@ -13,7 +13,7 @@ fn write_to_temp_file(content: &str) -> PathBuf {
     let mut rng = rand::thread_rng();
     let alphabet = Uniform::from('a'..'z');
     let file_name: String = std::iter::repeat_with(|| alphabet.sample(&mut rng))
-        .take(30)
+        .take(6)
         .collect();
     let parent_dir = current_dir.join(file_name);
     if !parent_dir.exists() {
