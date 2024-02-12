@@ -229,7 +229,7 @@ pub enum Error {
     },
     // TODO: find a better error form
     #[error("Compilation error")]
-    DiagnosticsError(Vec<String>)
+    DiagnosticsError(Vec<String>),
 }
 
 pub struct FileWriter {
@@ -273,7 +273,7 @@ pub struct RunResult {
     pub casm_program: CairoProgram,
     pub instructions: Vec<Instruction>,
     pub headers_len: usize,
-    pub diagnostics: Vec<String>
+    pub diagnostics: Vec<String>,
 }
 
 pub fn run_program_at_path(filename: &PathBuf, arguments_as_str: &str) -> Result<RunResult, Error> {
@@ -608,7 +608,7 @@ pub fn run_program_at_path(filename: &PathBuf, arguments_as_str: &str) -> Result
         casm_program,
         instructions: instructions_vec,
         headers_len,
-        diagnostics: program_diagnostics
+        diagnostics: program_diagnostics,
     })
 }
 

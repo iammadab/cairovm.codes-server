@@ -1,11 +1,11 @@
+use axum::response::{IntoResponse, Response};
 use axum::{http::StatusCode, Json};
-use cairo1_run::{run_program_at_path, RunResult, CAIRO_LANG_COMPILER_VERSION, Error};
+use cairo1_run::{run_program_at_path, Error, RunResult, CAIRO_LANG_COMPILER_VERSION};
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use rand::distributions::{Distribution, Uniform};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env, fs, path::PathBuf};
-use axum::response::{IntoResponse, Response};
 use tracer::{make_tracer_data, TracerData};
 
 fn write_to_temp_file(content: &str) -> PathBuf {
@@ -13,9 +13,13 @@ fn write_to_temp_file(content: &str) -> PathBuf {
     let mut rng = rand::thread_rng();
     let alphabet = Uniform::from('a'..'z');
     let file_name: String = std::iter::repeat_with(|| alphabet.sample(&mut rng))
-        .take(30)
+        .take(6)
         .collect();
-    let file_path = current_dir.join(format!("{}.cairo", file_name));
+    let parent_dir = current_dir.join(file_name);
+    if !parent_dir.exists() {
+        fs::create_dir_all(&parent_dir).expect("failed to create new folder");
+    }
+    let file_path = parent_dir.join("main.cairo");
     fs::write(&file_path, content).expect("Failed to write to file");
     file_path
 }
@@ -44,22 +48,22 @@ pub struct RunnerResult {
     casm_formatted_instructions: Vec<String>,
     casm_to_sierra_map: HashMap<usize, Vec<usize>>,
     sierra_formatted_program: SierraFormattedProgram,
-    diagnostics: Vec<String>
+    diagnostics: Vec<String>,
 }
 
 #[derive(Serialize)]
 pub struct ErrorResult {
     #[serde(skip)]
     status_code: StatusCode,
-    diagnostics: Vec<String>
+    diagnostics: Vec<String>,
 }
 
 impl ErrorResult {
     fn new(status_code: StatusCode, diagnostics: Vec<String>) -> Self {
-       Self {
-           status_code,
-           diagnostics
-       }
+        Self {
+            status_code,
+            diagnostics,
+        }
     }
 }
 
@@ -89,9 +93,11 @@ pub async fn runner_handler(
             dbg!(&error);
             fs::remove_file(&file_path).expect("Failed to delete temporary file");
             return Err(match error {
-                Error::DiagnosticsError(program_diagnostics) => ErrorResult::new(StatusCode::EXPECTATION_FAILED, program_diagnostics),
-                _ => ErrorResult::new(StatusCode::EXPECTATION_FAILED, vec![])
-            })
+                Error::DiagnosticsError(program_diagnostics) => {
+                    ErrorResult::new(StatusCode::EXPECTATION_FAILED, program_diagnostics)
+                }
+                _ => ErrorResult::new(StatusCode::EXPECTATION_FAILED, vec![]),
+            });
         }
     };
 
@@ -120,7 +126,7 @@ pub async fn runner_handler(
         casm_formatted_instructions,
         casm_to_sierra_map: make_casm_to_sierra_map(casm_program.debug_info, headers_len),
         sierra_formatted_program: format_sierra_program(sierra_program),
-        diagnostics
+        diagnostics,
     }))
 }
 
