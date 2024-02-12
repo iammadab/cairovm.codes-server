@@ -35,7 +35,7 @@ pub struct SierraFormattedProgram {
 #[derive(Serialize, Deserialize)]
 pub struct RunnerPayload {
     cairo_program_code: String,
-    program_arguments: String
+    program_arguments: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -78,6 +78,8 @@ pub async fn runner_handler(
 ) -> Result<Json<RunnerResult>, ErrorResult> {
     let file_path = write_to_temp_file(&payload.cairo_program_code);
 
+    let program_arguments = payload.program_arguments.unwrap_or(String::new());
+
     let RunResult {
         sierra_program,
         casm_program,
@@ -87,7 +89,7 @@ pub async fn runner_handler(
         instructions,
         headers_len,
         diagnostics,
-    } = match run_program_at_path(&file_path, &payload.program_arguments[..]) {
+    } = match run_program_at_path(&file_path, &program_arguments[..]) {
         Ok(result) => result,
         Err(error) => {
             dbg!(&error);
