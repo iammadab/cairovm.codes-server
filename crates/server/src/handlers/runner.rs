@@ -1,4 +1,4 @@
-use crate::handlers::errors::ResponseError;
+use crate::handlers::errors::{build_log_entry_from_diagnostics, LogEntry, ResponseError};
 use axum::response::{IntoResponse, Response};
 use axum::{http::StatusCode, Json};
 use cairo1_run::{run_program_at_path, Error, RunResult, CAIRO_LANG_COMPILER_VERSION};
@@ -49,7 +49,7 @@ pub struct RunnerResult {
     casm_formatted_instructions: Vec<String>,
     casm_to_sierra_map: HashMap<usize, Vec<usize>>,
     sierra_formatted_program: SierraFormattedProgram,
-    diagnostics: Vec<String>,
+    logs: Vec<LogEntry>,
 }
 
 pub async fn runner_handler(
@@ -102,7 +102,7 @@ pub async fn runner_handler(
         casm_formatted_instructions,
         casm_to_sierra_map: make_casm_to_sierra_map(casm_program.debug_info, headers_len),
         sierra_formatted_program: format_sierra_program(sierra_program),
-        diagnostics,
+        logs: build_log_entry_from_diagnostics(diagnostics),
     }))
 }
 
