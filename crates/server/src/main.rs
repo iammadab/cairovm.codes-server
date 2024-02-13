@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Listening on 0.0.0.0:3000");
 
-    axum::Server::bind(&"0.0.0.0:3010".parse().unwrap())
+    axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
         .serve(app.into_make_service())
         .await
         .unwrap();
