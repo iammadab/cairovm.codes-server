@@ -60,6 +60,15 @@ impl ResponseError {
     pub(crate) fn get_error(error: Error) -> Self {
         match error {
             Error::DiagnosticsError(diagnostics) => build_diagnostics_response_error(diagnostics),
+            Error::ArgumentsSizeMismatch { expected, actual } => {
+                ResponseError::new(vec![ErrorEntry::new(
+                    ErrorType::Error,
+                    format!(
+                        "invalid argument count: expected {}, found {}",
+                        expected, actual
+                    )
+                )])
+            },
             _ => ResponseError::new(vec![ErrorEntry::default()]),
         }
     }
