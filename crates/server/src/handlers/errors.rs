@@ -1,33 +1,38 @@
-// TODO: add crate wide documentation
-// TODO: can there be something more general than error?
-
 use serde::Serialize;
-
 use axum::http::StatusCode;
-use axum::Json;
 use axum::response::{IntoResponse, Response};
-use cairo1_run::{CAIRO_LANG_COMPILER_VERSION, Error};
+use axum::Json;
+use cairo1_run::{Error, CAIRO_LANG_COMPILER_VERSION};
 
 #[derive(Serialize)]
-// TODO: add documentation
+/// Represents the error log type
 enum ErrorType {
     Error,
     Warn,
-    Info
+    Info,
 }
 
 #[derive(Serialize)]
-// TODO: add documentation
+/// Self contained error entry
 struct ErrorEntry {
     error_type: ErrorType,
-    message: String
+    message: String,
+}
+
+impl ErrorEntry {
+    fn new(error_type: ErrorType, message: String) -> Self {
+        Self {
+            error_type,
+            message,
+        }
+    }
 }
 
 impl Default for ErrorEntry {
     fn default() -> Self {
         Self {
             error_type: ErrorType::Error,
-            message: "failed to compile and run cairo program".to_string()
+            message: "failed to compile and run cairo program".to_string(),
         }
     }
 }
@@ -39,16 +44,24 @@ pub(crate) struct ResponseError {
     #[serde(skip)]
     status_code: StatusCode,
     errors: Vec<ErrorEntry>,
-    cairo_lang_compiler_version: String
+    cairo_lang_compiler_version: String,
 }
 
 impl ResponseError {
     // TODO: add documentation
-    pub(crate) fn get_error(err: Error) -> Self {
-        ResponseError {
+    fn new(errors: Vec<ErrorEntry>) -> Self {
+        Self {
             status_code: StatusCode::EXPECTATION_FAILED,
-            errors: vec![ErrorEntry::default()],
-            cairo_lang_compiler_version: CAIRO_LANG_COMPILER_VERSION.to_string()
+            errors,
+            cairo_lang_compiler_version: CAIRO_LANG_COMPILER_VERSION.to_string(),
+        }
+    }
+
+    // TODO: add documentation
+    pub(crate) fn get_error(error: Error) -> Self {
+        match error {
+            Error::DiagnosticsError(diagnostics) => build_diagnostics_response_error(diagnostics),
+            _ => ResponseError::new(vec![ErrorEntry::default()]),
         }
     }
 }
@@ -59,3 +72,15 @@ impl IntoResponse for ResponseError {
     }
 }
 
+// TODO: add documentation
+fn build_diagnostics_response_error(diagnostics: Vec<String>) -> ResponseError {
+    let diagnostics_errors = diagnostics.into_iter().map(|message| {
+        let error_type = if message.starts_with("error") {
+            ErrorType::Error
+        } else {
+            ErrorType::Warn
+        };
+        ErrorEntry::new(error_type, message)
+    });
+    ResponseError::new(diagnostics_errors.collect())
+}

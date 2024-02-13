@@ -1,3 +1,4 @@
+use crate::handlers::errors::ResponseError;
 use axum::response::{IntoResponse, Response};
 use axum::{http::StatusCode, Json};
 use cairo1_run::{run_program_at_path, Error, RunResult, CAIRO_LANG_COMPILER_VERSION};
@@ -7,7 +8,6 @@ use rand::distributions::{Distribution, Uniform};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env, fs, path::PathBuf};
 use tracer::{make_tracer_data, TracerData};
-use crate::handlers::errors::ResponseError;
 
 fn write_to_temp_file(content: &str) -> PathBuf {
     let current_dir = env::current_dir().expect("Failed to get current directory");
