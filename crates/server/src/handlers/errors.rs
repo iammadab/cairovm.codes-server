@@ -4,6 +4,8 @@
 use serde::Serialize;
 
 use axum::http::StatusCode;
+use axum::Json;
+use axum::response::{IntoResponse, Response};
 use cairo1_run::{CAIRO_LANG_COMPILER_VERSION, Error};
 
 #[derive(Serialize)]
@@ -33,21 +35,27 @@ impl Default for ErrorEntry {
 #[derive(Serialize)]
 // TODO: possibly, rename
 //  add documentation
-struct ResponseError {
+pub(crate) struct ResponseError {
     #[serde(skip)]
     status_code: StatusCode,
     errors: Vec<ErrorEntry>,
     cairo_lang_compiler_version: String
 }
 
-// TODO: add documentation
-//   make this more specific
-fn convert_error_to_response_error(error: Error) -> ResponseError {
-    ResponseError {
-        status_code: StatusCode::EXPECTATION_FAILED,
-        errors: vec![ErrorEntry::default()],
-        cairo_lang_compiler_version: CAIRO_LANG_COMPILER_VERSION.to_string()
+impl ResponseError {
+    // TODO: add documentation
+    pub(crate) fn get_error(err: Error) -> Self {
+        ResponseError {
+            status_code: StatusCode::EXPECTATION_FAILED,
+            errors: vec![ErrorEntry::default()],
+            cairo_lang_compiler_version: CAIRO_LANG_COMPILER_VERSION.to_string()
+        }
     }
 }
 
+impl IntoResponse for ResponseError {
+    fn into_response(self) -> Response {
+        (self.status_code, Json(self)).into_response()
+    }
+}
 

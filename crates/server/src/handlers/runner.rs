@@ -7,6 +7,7 @@ use rand::distributions::{Distribution, Uniform};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env, fs, path::PathBuf};
 use tracer::{make_tracer_data, TracerData};
+use crate::handlers::errors::ResponseError;
 
 fn write_to_temp_file(content: &str) -> PathBuf {
     let current_dir = env::current_dir().expect("Failed to get current directory");
@@ -51,31 +52,9 @@ pub struct RunnerResult {
     diagnostics: Vec<String>,
 }
 
-#[derive(Serialize)]
-pub struct ErrorResult {
-    #[serde(skip)]
-    status_code: StatusCode,
-    diagnostics: Vec<String>,
-}
-
-impl ErrorResult {
-    fn new(status_code: StatusCode, diagnostics: Vec<String>) -> Self {
-        Self {
-            status_code,
-            diagnostics,
-        }
-    }
-}
-
-impl IntoResponse for ErrorResult {
-    fn into_response(self) -> Response {
-        (self.status_code, Json(self)).into_response()
-    }
-}
-
 pub async fn runner_handler(
     Json(payload): Json<RunnerPayload>,
-) -> Result<Json<RunnerResult>, ErrorResult> {
+) -> Result<Json<RunnerResult>, ResponseError> {
     let file_path = write_to_temp_file(&payload.cairo_program_code);
 
     let program_arguments = payload.program_arguments.unwrap_or(String::new());
@@ -94,12 +73,7 @@ pub async fn runner_handler(
         Err(error) => {
             dbg!(&error);
             fs::remove_file(&file_path).expect("Failed to delete temporary file");
-            return Err(match error {
-                Error::DiagnosticsError(program_diagnostics) => {
-                    ErrorResult::new(StatusCode::EXPECTATION_FAILED, program_diagnostics)
-                }
-                _ => ErrorResult::new(StatusCode::EXPECTATION_FAILED, vec![]),
-            });
+            return Err(ResponseError::get_error(error));
         }
     };
 
