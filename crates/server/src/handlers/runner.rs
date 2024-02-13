@@ -1,7 +1,6 @@
 use crate::handlers::errors::{build_log_entry_from_diagnostics, LogEntry, ResponseError};
-use axum::response::{IntoResponse, Response};
-use axum::{http::StatusCode, Json};
-use cairo1_run::{run_program_at_path, Error, RunResult, CAIRO_LANG_COMPILER_VERSION};
+use axum::Json;
+use cairo1_run::{run_program_at_path, RunResult, CAIRO_LANG_COMPILER_VERSION};
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use rand::distributions::{Distribution, Uniform};
