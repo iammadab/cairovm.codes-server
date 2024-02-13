@@ -1,8 +1,8 @@
-use serde::Serialize;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use cairo1_run::{Error, CAIRO_LANG_COMPILER_VERSION};
+use serde::Serialize;
 
 #[derive(Serialize)]
 /// Represents the error log type
@@ -38,8 +38,7 @@ impl Default for ErrorEntry {
 }
 
 #[derive(Serialize)]
-// TODO: possibly, rename
-//  add documentation
+/// Server JSON serializable error type
 pub(crate) struct ResponseError {
     #[serde(skip)]
     status_code: StatusCode,
@@ -48,7 +47,7 @@ pub(crate) struct ResponseError {
 }
 
 impl ResponseError {
-    // TODO: add documentation
+    /// Creates new response type with default status code and cairo version
     fn new(errors: Vec<ErrorEntry>) -> Self {
         Self {
             status_code: StatusCode::EXPECTATION_FAILED,
@@ -57,7 +56,7 @@ impl ResponseError {
         }
     }
 
-    // TODO: add documentation
+    /// Converts cairo 1 error type to a ResponseError
     pub(crate) fn get_error(error: Error) -> Self {
         match error {
             Error::DiagnosticsError(diagnostics) => build_diagnostics_response_error(diagnostics),
@@ -72,13 +71,15 @@ impl IntoResponse for ResponseError {
     }
 }
 
-// TODO: add documentation
+/// Builds response error from a set of diagnostics strings
 fn build_diagnostics_response_error(diagnostics: Vec<String>) -> ResponseError {
     let diagnostics_errors = diagnostics.into_iter().map(|message| {
         let error_type = if message.starts_with("error") {
             ErrorType::Error
-        } else {
+        } else if message.starts_with("warning") {
             ErrorType::Warn
+        } else {
+            ErrorType::Info
         };
         ErrorEntry::new(error_type, message)
     });
